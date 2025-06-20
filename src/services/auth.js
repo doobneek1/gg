@@ -1,4 +1,5 @@
-import Amplify from 'aws-amplify';
+// Correct import statement
+import { Amplify } from 'aws-amplify';
 import config from '../config';
 
 const getIdToken = () => new Promise((resolve) => {
