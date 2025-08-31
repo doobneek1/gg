@@ -4,9 +4,10 @@ import { Route, Switch, Redirect } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { ConnectedRouter } from 'react-router-redux';
 
-// Correct import statement
 import { Amplify } from 'aws-amplify';
-import { AmplifyTheme } from 'aws-amplify-react';
+import { Authenticator } from '@aws-amplify/ui-react';
+import '@aws-amplify/ui-react/styles.css';
+
 import awsExports from './aws-exports';
 
 import { store, history } from '../store/index';
