@@ -2,12 +2,12 @@
 import React from 'react';
 import { Authenticator, useAuthenticator } from '@aws-amplify/ui-react';
 import '@aws-amplify/ui-react/styles.css';
-import '../../amplifyInit'; // make sure Amplify.configure(...) is called once
+import '../../app/aws-exports'; // make sure Amplify.configure(...) is called once
 
 // Your custom screens (JSX versions using aws-amplify Auth API)
-import StreetlivesSignIn from './SignIn.jsx';
-import StreetlivesForgotPassword from './ForgotPassword.jsx';
-import StreetlivesConfirmSignUp from './ConfirmSignUp.jsx';
+import StreetlivesSignIn from '../../app/auth/SignIn.jsx';
+import StreetlivesForgotPassword from '../../app/auth/ForgotPassword.jsx';
+import StreetlivesConfirmSignUp from '../../app/auth/ConfirmSignUp.jsx';
 // If you have a modern SignUp screen, import it too (optional)
 // import StreetlivesSignUp from './SignUp.jsx';
 

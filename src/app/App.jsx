@@ -87,7 +87,4 @@ function App() {
   );
 }
 
-AmplifyTheme.container.paddingRight = 0;
-AmplifyTheme.container.paddingLeft = 0;
-
 export default App;
