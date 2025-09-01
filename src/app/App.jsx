@@ -11,6 +11,7 @@ import '@aws-amplify/ui-react/styles.css';
 import awsExports from './aws-exports';
 
 import { store, history } from '../store/index';
+import { initExtensionBridge } from '../services/extensionBridge';
 
 import './App.css';
 import './IconLibrary';
@@ -35,6 +36,9 @@ history.listen(() => {
 });
 
 Amplify.configure(awsExports);
+
+// Initialize extension bridge to broadcast auth status signals
+initExtensionBridge();
 
 // TODO: Try coming up with a better way of mapping than hard-coding the current prod IDs.
 const feedbackLocations = [

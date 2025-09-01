@@ -1,5 +1,6 @@
 import React from 'react';
-import { Marker, InfoWindow } from 'react-google-maps';
+import { InfoWindow } from 'react-google-maps';
+import AdvancedMarker from './AdvancedMarker';
 import Button from '../button';
 import OverlayView from './OverlayView';
 
@@ -28,14 +29,23 @@ function LocationMarker(props) {
   };
 
   const marker = (
-    <Marker
+    <AdvancedMarker
       key={id}
       position={position}
       onClick={onClick}
-      icon={{ url: MARKER_ICON_MAPPINGS[color] }}
     >
+      <img src={MARKER_ICON_MAPPINGS[color]} alt="" style={{ width: 26, height: 40 }} />
+    </AdvancedMarker>
+  );
+
+  return (
+    <React.Fragment>
+      <OverlayView key={id} position={position} mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}>
+        {locationUrl ? <a href={locationUrl}>{marker}</a> : marker}
+      </OverlayView>
       {isOpen && (
         <InfoWindow
+          position={position}
           options={{
             maxWidth: window.innerWidth - 100,
           }}
@@ -60,13 +70,7 @@ function LocationMarker(props) {
           </div>
         </InfoWindow>
       )}
-    </Marker>
-  );
-
-  return (
-    <OverlayView key={id} position={position} mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}>
-      {locationUrl ? <a href={locationUrl}>{marker}</a> : marker}
-    </OverlayView>
+    </React.Fragment>
   );
 }
 
