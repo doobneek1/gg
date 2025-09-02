@@ -4,6 +4,7 @@ import Header from '../header';
 import Button from '../button';
 import Input from '../input';
 import TextArea from '../textarea';
+import FormatterTools from '../formatter/FormatterTools';
 
 class FormEdit extends Component {
   constructor(props) {
@@ -31,19 +32,24 @@ class FormEdit extends Component {
   }
 
   render() {
-    const InputComponent = this.props.multiline ? TextArea : Input;
+    const isMultiline = this.props.multiline;
+    const InputComponent = isMultiline ? TextArea : Input;
     return (
       <div>
         <Header>{this.props.headerText}</Header>
         <InputComponent
           fluid
           placeholder={this.props.placeholderText}
-          defaultValue={this.props.value}
+          value={isMultiline ? this.state.value : undefined}
+          defaultValue={!isMultiline ? this.props.value : undefined}
           onFocus={this.props.onInputFocus}
           onBlur={this.props.onInputBlur}
           onChange={this.onChange}
           minRows={5}
         />
+        {isMultiline && this.props.fieldName === 'description' && (
+          <FormatterTools value={this.state.value || ''} onChange={(v) => this.setState({ value: v })} />
+        )}
         <Button onClick={this.onSubmit} primary className="mt-3">
           OK
         </Button>&nbsp;

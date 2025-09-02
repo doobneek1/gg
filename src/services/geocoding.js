@@ -1,11 +1,15 @@
 let geocoder = null;
 
-export const getAddressForLocation = location => new Promise((resolve, reject) => {
+const googleReverseGeocode = (location) => new Promise((resolve, reject) => {
   if (!geocoder) {
     geocoder = new window.google.maps.Geocoder();
   }
 
-  geocoder.geocode({ location }, (results, status) => {
+  const locArg = typeof location.lat === 'function' && typeof location.lng === 'function'
+    ? { lat: location.lat(), lng: location.lng() }
+    : location;
+
+  geocoder.geocode({ location: locArg }, (results, status) => {
     try {
       if (status !== 'OK') {
         throw new Error('No address found at clicked position');
@@ -45,4 +49,41 @@ export const getAddressForLocation = location => new Promise((resolve, reject) =
   });
 });
 
+const nominatimReverseGeocode = async (location) => {
+  const loc = typeof location.lat === 'function' && typeof location.lng === 'function'
+    ? { lat: location.lat(), lng: location.lng() }
+    : location;
+
+  const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(loc.lat)}&lon=${encodeURIComponent(loc.lng)}`;
+  const res = await fetch(url, {
+    headers: { 'Accept-Language': 'en' },
+  });
+  if (!res.ok) throw new Error('Reverse geocoding failed');
+  const data = await res.json();
+
+  const addr = data.address || {};
+  const streetParts = [addr.house_number, addr.road].filter(Boolean).join(' ');
+  const city = addr.city || addr.town || addr.village || '';
+  const state = addr.state || '';
+  const postalCode = addr.postcode || '';
+  const country = addr.country_code ? addr.country_code.toUpperCase() : (addr.country || '');
+
+  return {
+    street: streetParts,
+    city: city,
+    state: state,
+    postalCode: postalCode,
+    country: country,
+    formattedAddress: data.display_name,
+  };
+};
+
+export const getAddressForLocation = (location) => {
+  if (typeof window !== 'undefined' && window.google && window.google.maps && window.google.maps.Geocoder) {
+    return googleReverseGeocode(location);
+  }
+  return nominatimReverseGeocode(location);
+};
+
 export default { getAddressForLocation };
+

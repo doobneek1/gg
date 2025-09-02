@@ -5,13 +5,14 @@ import { Provider } from 'react-redux';
 import { ConnectedRouter } from 'react-router-redux';
 
 import { Amplify } from 'aws-amplify';
-import { Authenticator } from '@aws-amplify/ui-react';
 import '@aws-amplify/ui-react/styles.css';
 
 import awsExports from './aws-exports';
 
 import { store, history } from '../store/index';
 import { initExtensionBridge } from '../services/extensionBridge';
+import { initGghost } from '../services/gghost';
+import { initGghostOverlay } from '../services/gghostOverlay';
 
 import './App.css';
 import './IconLibrary';
@@ -39,6 +40,10 @@ Amplify.configure(awsExports);
 
 // Initialize extension bridge to broadcast auth status signals
 initExtensionBridge();
+// Initialize gghost globals for the doobneek extension integrations
+initGghost();
+// Mount a lightweight in-app gghost overlay on team location pages
+initGghostOverlay(history);
 
 // TODO: Try coming up with a better way of mapping than hard-coding the current prod IDs.
 const feedbackLocations = [

@@ -1,4 +1,4 @@
-import { Amplify, Auth } from 'aws-amplify';
+import { Auth } from 'aws-amplify';
 import config from '../config';
 // make sure somewhere early in app startup you call:
 // Amplify.configure(awsconfig);

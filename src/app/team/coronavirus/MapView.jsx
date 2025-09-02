@@ -4,15 +4,18 @@ import debounce from 'lodash.debounce';
 import { getLocations } from '../../../services/api';
 import Map from '../../../components/map';
 import Dropdown from '../../../components/dropdown';
+import Button from '../../../components/button';
 import Icon from '../../../components/icon';
 import ExistingLocationMarker from '../mapView/ExistingLocationMarker';
+import { haversineMiles, DOWNTOWN_MANHATTAN } from '../../../utils/geo';
 
 const debouncePeriod = 500;
 const minSearchLength = 3;
 
 export default class MapView extends Component {
   state = {
-    center: null,
+    centerOverride: null,
+    viewCenter: null,
     searchString: '',
     suggestions: [],
     openLocationId: null,
@@ -45,7 +48,8 @@ export default class MapView extends Component {
   };
 
   onBoundsChanged = debounce(({ center, radius }) => {
-    this.fetchLocations(center, radius);
+    const numericCenter = { lat: center.lat(), lng: center.lng() };
+    this.setState({ viewCenter: numericCenter, radius }, () => this.fetchLocations(center, radius));
   }, debouncePeriod);
 
   onSuggestionsFetchRequested = debounce(({ searchString, reason }) => {
@@ -73,10 +77,7 @@ export default class MapView extends Component {
     this.searchInput.value = '';
     this.setState({
       suggestions: [],
-      center: {
-        lat: coords[1],
-        lng: coords[0],
-      },
+      centerOverride: { lat: coords[1], lng: coords[0] },
     });
     this.onToggleMarkerInfo(location.id);
   }
@@ -115,6 +116,9 @@ export default class MapView extends Component {
   );
 
   render() {
+    const centerForCheck = this.state.viewCenter || this.state.centerOverride;
+    const showRecenter = !!(centerForCheck &&
+      haversineMiles(centerForCheck, DOWNTOWN_MANHATTAN) > 11);
     return (
       <div className="Map">
         <div
@@ -187,8 +191,15 @@ export default class MapView extends Component {
           <Map
             onBoundsChanged={this.onBoundsChanged}
             onClick={this.onMapClick}
-            center={this.state.center}
+            center={this.state.centerOverride}
           >
+            {showRecenter && (
+              <div style={{ position: 'absolute', top: '0.8em', right: '0.8em', zIndex: 2 }}>
+                <Button compact secondary onClick={() => this.setState({ centerOverride: { lat: DOWNTOWN_MANHATTAN.lat, lng: DOWNTOWN_MANHATTAN.lng } })}>
+                  Recenter to Downtown Manhattan
+                </Button>
+              </div>
+            )}
             {this.renderLocationMarkers()}
           </Map>
         </div>

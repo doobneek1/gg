@@ -1,8 +1,8 @@
 import React from 'react';
-import { InfoWindow } from 'react-google-maps';
-import AdvancedMarker from './AdvancedMarker';
+import ReactDOM from 'react-dom';
+import maplibregl from 'maplibre-gl';
+import MapContext from './MapContext';
 import Button from '../button';
-import OverlayView from './OverlayView';
 
 const MARKER_ICON_MAPPINGS = {
   /* eslint-disable max-len */
@@ -11,67 +11,124 @@ const MARKER_ICON_MAPPINGS = {
   /* eslint-enable max-len */
 };
 
-function LocationMarker(props) {
-  const {
-    id,
-    mapLocation,
-    isOpen,
-    onClick,
-    onClose,
-    onSubmit,
-    children,
-    locationUrl,
-    color = 'blue',
-  } = props;
-  const position = {
-    lng: mapLocation.position.coordinates[0],
-    lat: mapLocation.position.coordinates[1],
-  };
+class LocationMarker extends React.Component {
+  static contextType = MapContext;
 
-  const marker = (
-    <AdvancedMarker
-      key={id}
-      position={position}
-      onClick={onClick}
-    >
-      <img src={MARKER_ICON_MAPPINGS[color]} alt="" style={{ width: 26, height: 40 }} />
-    </AdvancedMarker>
-  );
+  constructor(props) {
+    super(props);
+    this.marker = null;
+    this.markerEl = null;
+    this.popup = null;
+    this.popupContainer = document.createElement('div');
+  }
 
-  return (
-    <React.Fragment>
-      <OverlayView key={id} position={position} mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}>
-        {locationUrl ? <a href={locationUrl}>{marker}</a> : marker}
-      </OverlayView>
-      {isOpen && (
-        <InfoWindow
-          position={position}
-          options={{
-            maxWidth: window.innerWidth - 100,
-          }}
-          onCloseClick={onClose}
-        >
-          <div
-            style={{
-              textAlign: 'left',
-              maxHeight: window.innerHeight - 200,
-              overflowY: 'auto',
-            }}
-          >
-            {children}
-            <br />
-            <Button primary fluid onClick={onSubmit}>
-              <span>YES</span>
-            </Button>
-            <div style={{ margin: '.5em' }} />
-            <Button primary basic fluid onClick={onClose}>
-              <span>NO THANKS</span>
-            </Button>
-          </div>
-        </InfoWindow>
-      )}
-    </React.Fragment>
-  );
+  componentDidMount() {
+    this._ensureMarker();
+    this._syncPopup();
+  }
+
+  componentDidUpdate(prevProps) {
+    this._ensureMarker();
+    const [lng, lat] = this._lngLatFromProps(this.props);
+    if (this.marker) {
+      const [plng, plat] = this._lngLatFromProps(prevProps);
+      if (lat !== plat || lng !== plng) {
+        this.marker.setLngLat([lng, lat]);
+      }
+    }
+    this._syncPopup();
+  }
+
+  componentWillUnmount() {
+    if (this.popup) {
+      this.popup.remove();
+      this.popup = null;
+    }
+    if (this.marker) {
+      this.marker.remove();
+      this.marker = null;
+    }
+  }
+
+  _lngLatFromProps(p) {
+    return [p.mapLocation.position.coordinates[0], p.mapLocation.position.coordinates[1]];
+  }
+
+  _ensureMarker() {
+    const map = this.context;
+    if (!map || this.marker) return;
+    const [lng, lat] = this._lngLatFromProps(this.props);
+
+    // Build DOM element for marker
+    const img = document.createElement('img');
+    img.src = MARKER_ICON_MAPPINGS[this.props.color || 'blue'];
+    img.alt = '';
+    img.style.width = '26px';
+    img.style.height = '40px';
+    img.style.cursor = 'pointer';
+    const container = document.createElement(this.props.locationUrl ? 'a' : 'div');
+    if (this.props.locationUrl) {
+      container.href = this.props.locationUrl;
+    }
+    container.appendChild(img);
+    if (!this.props.locationUrl) {
+      container.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (this.props.onClick) this.props.onClick();
+      });
+    }
+    this.markerEl = container;
+    this.marker = new maplibregl.Marker({ element: container, anchor: 'bottom' })
+      .setLngLat([lng, lat])
+      .addTo(map);
+  }
+
+  _syncPopup() {
+    const map = this.context;
+    if (!map) return;
+    const [lng, lat] = this._lngLatFromProps(this.props);
+
+    if (this.props.isOpen) {
+      if (!this.popup) {
+        this.popup = new maplibregl.Popup({ maxWidth: `${Math.min(window.innerWidth - 100, 400)}px` })
+          .setLngLat([lng, lat])
+          .setDOMContent(this.popupContainer)
+          .addTo(map);
+        this.popup.on('close', () => { if (this.props.onClose) this.props.onClose(); });
+      } else {
+        this.popup.setLngLat([lng, lat]);
+      }
+    } else if (this.popup) {
+      this.popup.remove();
+      this.popup = null;
+    }
+  }
+
+  render() {
+    // Render popup content via portal when open
+    if (!this.props.isOpen || !this.popupContainer) return null;
+
+    return ReactDOM.createPortal(
+      <div
+        style={{
+          textAlign: 'left',
+          maxHeight: window.innerHeight - 200,
+          overflowY: 'auto',
+        }}
+      >
+        {this.props.children}
+        <br />
+        <Button primary fluid onClick={this.props.onSubmit}>
+          <span>YES</span>
+        </Button>
+        <div style={{ margin: '.5em' }} />
+        <Button primary basic fluid onClick={this.props.onClose}>
+          <span>NO THANKS</span>
+        </Button>
+      </div>,
+      this.popupContainer,
+    );
+  }
 }
 
 export default LocationMarker;

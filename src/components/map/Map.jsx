@@ -5,7 +5,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import config from '../../config';
 import MapContext from './MapContext';
 
-const defaultCenter = { lat: 40.7831, lng: -73.9712 };
+const defaultCenter = { lat: 40.7128, lng: -74.0060 }; // Downtown Manhattan
 const defaultZoom = 14;
 const minZoom = 11;
 const geolocationTimeout = 5000;
@@ -30,6 +30,7 @@ class Map extends Component {
     this.mapNodeRef = React.createRef();
     this.state = {
       userPosition: null,
+      mapReady: false,
     };
     this.map = null;
     this.userMarker = null;
@@ -37,19 +38,27 @@ class Map extends Component {
   }
 
   componentDidMount() {
+    const styleSetting = config.mapStyleUrl || config.mapStyle;
+
     this.map = new maplibregl.Map({
       container: this.mapNodeRef.current,
-      style: config.mapStyleUrl || 'https://demotiles.maplibre.org/style.json',
+      style: styleSetting,
       center: [
         (this.props.center && this.props.center.lng) || defaultCenter.lng,
         (this.props.center && this.props.center.lat) || defaultCenter.lat,
       ],
       zoom: defaultZoom,
     });
+    this.setState({ mapReady: true });
 
     this.map.on('load', () => {
       this.mapReady = true;
       this._emitBoundsChanged();
+    });
+
+    this.map.on('error', (e) => {
+      // eslint-disable-next-line no-console
+      console.warn('Map error:', e && e.error ? e.error : e);
     });
 
     // Limit min zoom similar to previous config
@@ -161,8 +170,10 @@ class Map extends Component {
     const { children } = this.props;
     return (
       <MapContext.Provider value={this.map}>
-        <div ref={this.mapNodeRef} style={{ position: 'absolute', inset: 0 }} />
-        {typeof children === 'function' ? children({ centerMap: this.centerMap }) : children}
+        <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+          <div ref={this.mapNodeRef} style={{ position: 'absolute', inset: 0 }} />
+          {typeof children === 'function' ? children({ centerMap: this.centerMap }) : children}
+        </div>
       </MapContext.Provider>
     );
   }
